@@ -8,4 +8,10 @@
         click <a href="/logout">here to log out</a>
     </p>
 </div>
+<h3>Posts:</h3>
+{% for post in posts %}
+<strong>Title:</strong> {{ post.title }} <br>
+<strong>Post:</strong> {{ post.description }} <br>
+{% endfor %}
+
 {% endblock %}
