@@ -31,7 +31,7 @@ def world():
 def login():
     users = db.users
     login_user = users.find_one({'name' : request.form.get("username")})
-    Hpassword = request.form['password'].encode('utf-8')
+    Hpassword = request.form.get["password"].encode('utf-8')
     if login_user:
         if bcrypt.hashpw(Hpassword, login_user['password']) == login_user['password']:
             session['username'] =request.form.get("username")
