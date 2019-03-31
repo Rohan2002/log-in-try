@@ -1,10 +1,15 @@
 from flask import Flask, render_template, redirect, url_for, request, session,flash,g
 from functools import wraps
+#from flask_pymongo import PyMongo
+import pymongo
+import bcrypt
+from pymongo import MongoClient
 
 import sqlite3
 app = Flask(__name__, template_folder='template')
-app.secret_key = "cool"
-app.database = "sample.db"
+client = MongoClient('mongodb://localhost:27017/')
+db = client['FTX']
+
 
 def log_required(f):
     @wraps(f)
@@ -15,42 +20,42 @@ def log_required(f):
             flash("you need to log in first")
             return redirect(url_for('login'))
     return wrap
-
-
+          
 @app.route("/")
-@log_required
 def world():
-    g.db = connect_DB()
-    cur = g.db.execute('select * from posts')
-    posts = []
-    posts = [dict(title=row[0], description=row[1]) for row in cur.fetchall()]
-    g.db.close()
+    if 'username' in session:
+        return "You are logged in as: " + session['username']
     return render_template("index.html")
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    form = RegForm()
-    if request.method == 'POST':
-        if form.validate():
-            existing_user = User.objects(email=form.email.data).first()
-            if existing_user is None:
-                hashpass = generate_password_hash(form.password.data, method='sha256')
-                hey = User(form.email.data,hashpass).save()
-                login_user(hey)
-                return redirect(url_for('dashboard'))
-    return render_template('register.html', form=form)
-
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['POST', 'GET'])
 def login():
-    error = None
-    if request.method == 'POST':
-        if (request.form['username'] != 'admin' or request.form['password'] != 'admin'):
-            error = 'Invalid Credentials. Please try again.'
-        else:
-            session["logged_in"] = True
-            flash("LOGGED IN")    
+    users = db.users
+    login_user = users.find_one({'name' : request.form.get("username")})
+    Hpassword = request.form['password'].encode('utf-8')
+    if login_user:
+        if bcrypt.hashpw(Hpassword, login_user['password']) == login_user['password']:
+            session['username'] =request.form.get("username")
             return redirect(url_for('world'))
-    return render_template('login.html', error=error)
+        else:
+            flash("Invalid username/password")
+    return render_template('index.html')
+
+@app.route('/register', methods=['POST', 'GET'])
+def register():
+    if request.method == 'POST':
+        users = db.users
+        existing_user = users.find_one({'name' : request.form['username']})
+
+        if existing_user is None:
+            Hpassword = request.form['password'].encode('utf-8')
+            hashpass = bcrypt.hashpw(Hpassword, bcrypt.gensalt())
+            users.insert({'name' : request.form['username'], 'password' : hashpass})
+            session['username'] = request.form.get("username")
+            return redirect(url_for('world'))
+        
+        flash("That username already exists!")
+
+    return render_template('register.html')
 
 @app.route("/logout")
 @log_required
@@ -59,8 +64,6 @@ def logout():
     flash("LOGGED OUT")    
     return redirect(url_for('world'))
 
-def connect_DB():
-    return sqlite3.connect("sample.db")
-
 if __name__ == '__main__':
+    app.secret_key = 'mysecret'
     app.run()

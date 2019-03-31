@@ -1,9 +1,0 @@
-<!doctype html>
-{% extends "base.html" %}
-{% block content %}
-<form action="" method="post">
-    <input type="text" placeholder="Enter Username" name="username" value="{{ request.form.username }}">
-    <input type="password" placeholder="Enter Password" name="password" value="{{ request.form.password }}" required>
-    <button class="btn btn-default" type="submit" value="login">Login</button>
-</form>
-{% endblock %}
