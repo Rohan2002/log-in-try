@@ -31,10 +31,10 @@ def world():
 def login():
     users = db.users
     login_user = users.find_one({'name' : request.form.get("username")})
-    Hpassword = request.form.get("password").encode('utf-8')#this is the error
-    hashpass = bcrypt.hashpw(Hpassword, login_user['password'])
+    Hpassword = request.form.get("password")
+    print(Hpassword)
     if login_user:
-        if hashpass == login_user['password']:
+        if bcrypt.hashpw(Hpassword.encode('utf-8'), login_user['password']) == login_user['password']:
             session['username'] =request.form.get("username")
             return redirect(url_for('world'))
         else:
