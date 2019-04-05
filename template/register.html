@@ -12,11 +12,16 @@
                     <label for="exampleInputPassword1">Password</label>
                     <input type="password" class="form-control" name="password" placeholder="Password">
                 </div>
+                <div class="form-group">
+                    <label for="exampleInputEmail">Email</label>
+                    <input type="email" class="form-control" name="Email" placeholder="email">
+                </div>
+                <div class="form-group">
+                    <label for="exampleInputInstiture">Institute</label>
+                    <input type="text" class="form-control" name="Institute" placeholder="Institute">
+                </div>
                 <button type="submit" class="btn btn-primary btn-block">Register</button>
             </form>
-            {% for message in get_flashed_messages() %}
-            {{ message }}
-            {% endfor %}
             <br>
         </div>
     </div>

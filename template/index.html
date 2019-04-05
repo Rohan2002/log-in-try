@@ -19,11 +19,9 @@
             {% if error %}
             <p class="error"><strong>Error:</strong> {{ error }}</p>
             {% endif %}
-
-            <!-- messages -->
-            {% for message in get_flashed_messages() %}
-            {{ message }}
-            {% endfor %}
+            <div>
+                Forgot your password? <a href="{{ url_for('lostPassword') }}">click here</a>.
+            </div>
             <div>
                 Don't have an account? <a href="{{ url_for('register') }}">Sign up here</a>.
             </div>

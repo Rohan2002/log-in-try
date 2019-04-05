@@ -1,14 +1,15 @@
-from flask import Flask, render_template, redirect, url_for, request, session,flash,g
+from flask import Flask, render_template, redirect, url_for, request, session,g
 from functools import wraps
-#from flask_pymongo import PyMongo
 import pymongo
 import bcrypt
 from pymongo import MongoClient
+from flask_mail import Mail
 
-import sqlite3
 app = Flask(__name__, template_folder='template')
 client = MongoClient('mongodb://localhost:27017/')
 db = client['FTX']
+mail = Mail()
+mail.init_app(app)
 
 
 def log_required(f):
@@ -17,7 +18,7 @@ def log_required(f):
         if('logged_in' in session) :
             return f(*args, **kwargs)
         else:
-            flash("you need to log in first")
+            return("you need to log in first")
             return redirect(url_for('login'))
     return wrap
           
@@ -30,31 +31,46 @@ def world():
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     users = db.users
-    login_user = users.find_one({'name' : request.form.get("username")})
+    login_user = users.find_one({'username' : request.form.get("username")})
     Hpassword = request.form.get("password")
-    print(Hpassword)
     if login_user:
         if bcrypt.hashpw(Hpassword.encode('utf-8'), login_user['password']) == login_user['password']:
             session['username'] =request.form.get("username")
             return redirect(url_for('world'))
         else:
-            flash("Invalid username/password")
+            return("Invalid username/password")
     return render_template('index.html')
+
+@app.route('/lostPassword')
+def lostPassword():
+    find_user_mail = users.find_one({'email' : request.form.get("email")})
+    mail_user = request.form.get("email")
+    if find_user_mail:
+        msg = Message()
+        msg.recipients = ["rohandeshpande832@gmail.com"]
+        msg.add_recipient(find_user_mail)
+        msg.html = "<b>testing</b>"
+        mail.send(msg)
+
+    else:
+        return("Invalid email")
+    return render_template('LostPassword.html')
 
 @app.route('/register', methods=['POST', 'GET'])
 def register():
     if request.method == 'POST':
         users = db.users
-        existing_user = users.find_one({'name' : request.form['username']})
+        existing_user = users.find_one({'username' : request.form['username']})
 
         if existing_user is None:
             Hpassword = request.form['password'].encode('utf-8')
             hashpass = bcrypt.hashpw(Hpassword, bcrypt.gensalt())
-            users.insert({'name' : request.form['username'], 'password' : hashpass})
+            users.insert({'username' : request.form['username'], 'password' : hashpass, 'email' : request.form['email'], 'institute' : request.form['Institute']})
+            
             session['username'] = request.form.get("username")
             return redirect(url_for('world'))
         
-        flash("That username already exists!")
+        return("That username already exists!")
 
     return render_template('register.html')
 
@@ -62,7 +78,7 @@ def register():
 @log_required
 def logout():
     session.pop("logged_in", None)  
-    flash("LOGGED OUT")    
+    return("LOGGED OUT")    
     return redirect(url_for('world'))
 
 if __name__ == '__main__':
